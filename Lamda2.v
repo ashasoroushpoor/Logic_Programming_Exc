@@ -12,6 +12,7 @@ Inductive type : Type :=
 | Pi : atomic_type -> type -> type.
 
 Infix ">>" := Arr (right associativity, at level 9).
+Notation "$" := Var (right associativity, at level 10).
 
 Definition atomic_term : Type := nat.
 
@@ -69,16 +70,37 @@ bool :=
      end
     end.
 
-(* Fixpoint check_declaration (G : context) (x : atomic_term) (a : type) :
+Fixpoint type_eqb (a : type) (b : type): bool :=
+    match a with
+    | Var a' => 
+        match b with
+        | Var b' => eqb a' b'
+        | _ => false
+        end
+    | a' >> a'' =>
+        match b with
+        | b' >> b'' => (type_eqb a' b') && (type_eqb a'' b'')
+        | _ => false
+        end
+    | Pi a' a'' =>
+        match b with 
+        | Pi b' b'' => (eqb b' a') && (type_eqb a'' b'')
+        | _ => false
+        end
+    end.
+
+Compute (type_eqb ((Var 2) >> $3) (($2) >> $3)).
+Compute (type_eqb ($ 2) (Pi (3) ($3))).
+Fixpoint check_declaration (G : context) (x : atomic_term) (a : type) :
     bool :=
         match G with
         | [] => false
         | d :: G' =>
          match d with
-         |Sttd y b => (eqb x y && eqb a b) || check_term G' x
-         | Std _ => check_term G' x
+         |Sttd y b => (eqb x y && type_eqb a b) || check_declaration G' x a
+         | Std _ => check_declaration G' x a
          end
-        end. *)
+        end.
 
 Fixpoint FVl (t : type) : list atomic_type :=
     match t with
